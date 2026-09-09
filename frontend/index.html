@@ -39,6 +39,13 @@
       border-radius: 6px;
       font-weight: bold;
     }
+    button:disabled {
+      opacity: 0.5;
+    }
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -56,9 +63,14 @@
     <label>End: <span id="endLabel">0</span>s</label>
     <input type="range" id="endRange" min="0" value="0" step="0.1">
 
+    <br>
     <button id="previewTrim">Preview Trim</button>
+    <button id="exportTrim">Export Trimmed Video</button>
+
+    <p id="status"></p>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg.js/4.2.9002/ffmpeg.min.js"></script>
   <script>
     const upload = document.getElementById('videoUpload');
     const preview = document.getElementById('preview');
@@ -67,10 +79,15 @@
     const startLabel = document.getElementById('startLabel');
     const endLabel = document.getElementById('endLabel');
     const previewTrim = document.getElementById('previewTrim');
+    const exportTrim = document.getElementById('exportTrim');
+    const status = document.getElementById('status');
+
+    let uploadedFile = null;
 
     upload.addEventListener('change', function() {
       const file = this.files[0];
       if (file) {
+        uploadedFile = file;
         preview.src = URL.createObjectURL(file);
       }
     });
@@ -100,6 +117,47 @@
           clearInterval(checkEnd);
         }
       }, 100);
+    });
+
+    exportTrim.addEventListener('click', async function() {
+      if (!uploadedFile) {
+        status.textContent = "Please upload a video first.";
+        return;
+      }
+
+      exportTrim.disabled = true;
+      status.textContent = "Loading video engine... this may take a moment.";
+
+      const { createFFmpeg, fetchFile } = FFmpeg;
+      const ffmpeg = createFFmpeg({ log: true });
+      await ffmpeg.load();
+
+      status.textContent = "Processing your trim...";
+
+      ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(uploadedFile));
+
+      const start = startRange.value;
+      const duration = (endRange.value - startRange.value).toFixed(2);
+
+      await ffmpeg.run(
+        '-i', 'input.mp4',
+        '-ss', start.toString(),
+        '-t', duration.toString(),
+        '-c', 'copy',
+        'output.mp4'
+      );
+
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(videoBlob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'zentaur-trimmed.mp4';
+      link.click();
+
+      status.textContent = "Done! Your trimmed video downloaded.";
+      exportTrim.disabled = false;
     });
   </script>
 </body>
