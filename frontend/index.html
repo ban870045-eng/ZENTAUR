@@ -19,6 +19,26 @@
       border: 2px solid #D4AF37;
       border-radius: 8px;
     }
+    .controls {
+      margin-top: 20px;
+    }
+    .controls label {
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 80%;
+      accent-color: #D4AF37;
+    }
+    button {
+      background-color: #D4AF37;
+      color: #000000;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 20px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -29,15 +49,57 @@
   <br><br>
   <video id="preview" width="300" controls></video>
 
+  <div class="controls">
+    <label>Start: <span id="startLabel">0</span>s</label>
+    <input type="range" id="startRange" min="0" value="0" step="0.1">
+
+    <label>End: <span id="endLabel">0</span>s</label>
+    <input type="range" id="endRange" min="0" value="0" step="0.1">
+
+    <button id="previewTrim">Preview Trim</button>
+  </div>
+
   <script>
     const upload = document.getElementById('videoUpload');
     const preview = document.getElementById('preview');
+    const startRange = document.getElementById('startRange');
+    const endRange = document.getElementById('endRange');
+    const startLabel = document.getElementById('startLabel');
+    const endLabel = document.getElementById('endLabel');
+    const previewTrim = document.getElementById('previewTrim');
 
     upload.addEventListener('change', function() {
       const file = this.files[0];
       if (file) {
         preview.src = URL.createObjectURL(file);
       }
+    });
+
+    preview.addEventListener('loadedmetadata', function() {
+      startRange.max = preview.duration;
+      endRange.max = preview.duration;
+      endRange.value = preview.duration;
+      endLabel.textContent = preview.duration.toFixed(1);
+    });
+
+    startRange.addEventListener('input', function() {
+      startLabel.textContent = parseFloat(this.value).toFixed(1);
+    });
+
+    endRange.addEventListener('input', function() {
+      endLabel.textContent = parseFloat(this.value).toFixed(1);
+    });
+
+    previewTrim.addEventListener('click', function() {
+      preview.currentTime = parseFloat(startRange.value);
+      preview.play();
+
+      const checkEnd = setInterval(function() {
+        if (preview.currentTime >= parseFloat(endRange.value)) {
+          preview.pause();
+          clearInterval(checkEnd);
+        }
+      }, 100);
     });
   </script>
 </body>
