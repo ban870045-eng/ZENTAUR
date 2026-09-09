@@ -2,9 +2,43 @@
 <html>
 <head>
   <title>ZENTAUR</title>
+  <style>
+    body {
+      background-color: #000000;
+      color: #FFD700;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    input[type="file"] {
+      color: #FFD700;
+      margin-top: 20px;
+    }
+    video {
+      margin-top: 20px;
+      border: 2px solid #FFD700;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
   <h1>Welcome to ZENTAUR</h1>
   <p>Your AI video editor — coming soon.</p>
+
+  <input type="file" id="videoUpload" accept="video/*">
+  <br><br>
+  <video id="preview" width="300" controls></video>
+
+  <script>
+    const upload = document.getElementById('videoUpload');
+    const preview = document.getElementById('preview');
+
+    upload.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        preview.src = URL.createObjectURL(file);
+      }
+    });
+  </script>
 </body>
 </html>
